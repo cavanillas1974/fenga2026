@@ -10,9 +10,8 @@ import { GoogleGenAI } from "@google/genai";
 
 export const maxDuration = 120;
 
-const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY! });
-
 export async function POST(req: NextRequest) {
+  const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY! });
   try {
     const { imageBase64, changeRequest, params } = await req.json();
 

@@ -11,8 +11,6 @@ import { GoogleGenAI } from "@google/genai";
 
 export const maxDuration = 30;
 
-const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY! });
-
 export interface LogoAnalysis {
   /** Primary brand colors as hex values */
   colors: string[];
@@ -33,6 +31,7 @@ export interface LogoAnalysis {
 }
 
 export async function POST(req: NextRequest) {
+  const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY! });
   try {
     const { logoBase64 } = await req.json();
 

@@ -3,10 +3,9 @@ import { GoogleGenAI } from "@google/genai";
 
 export const maxDuration = 120;
 
-const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY! });
 const MODEL = "gemini-2.0-flash";
 
-async function callAgent(prompt: string): Promise<any> {
+async function callAgent(ai: GoogleGenAI, prompt: string): Promise<any> {
   const response = await ai.models.generateContent({
     model: MODEL,
     contents: [{ role: "user", parts: [{ text: prompt }] }],
@@ -53,6 +52,7 @@ ${componentesStr}`;
 }
 
 export async function POST(req: NextRequest) {
+  const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY! });
   try {
     const { params } = await req.json();
     const ctx = buildContext(params);
@@ -75,7 +75,7 @@ export async function POST(req: NextRequest) {
     // ─── FASE 1: 5 agentes en paralelo ──────────────────────────────────────
     const [agente1, agente2, agente3, agente4, agente5] = await Promise.all([
 
-      callAgent(`Eres INGENIERO ESTRUCTURAL de Fenga (manufactura industrial México).
+      callAgent(ai, `Eres INGENIERO ESTRUCTURAL de Fenga (manufactura industrial México).
 ${ctx}
 
 INSTRUCCIÓN CRÍTICA: La lista de cortes debe reflejar EXACTAMENTE los componentes indicados arriba.
@@ -88,28 +88,28 @@ Responde SOLO JSON válido sin markdown:
 {"titulo":"nombre comercial máx 5 palabras","folio":"${folio}","descripcionTecnica":"4-5 oraciones técnicas específicas de este mueble: función, componentes reales (${compResumen}), estructura, capacidades","especificaciones":[{"clave":"Dimensión total (mm)","valor":"0000 × 0000 × 000"},{"clave":"Peso estimado","valor":"00 kg"},{"clave":"Capacidad de carga","valor":"000 kg"},{"clave":"Estructura principal","valor":"descripción"},{"clave":"Tipo de ensamble","valor":"descripción"},{"clave":"Resistencia humedad","valor":"Alta/Media/Baja"},{"clave":"Dificultad fabricación","valor":"Básico/Medio/Avanzado"},{"clave":"Norma aplicable","valor":"norma o N/A"}],"listaCortesDetallada":[{"pieza":"nombre exacto","cantidad":1,"largoMM":1800,"anchoMM":400,"espesorMM":18,"material":"MDF 18mm","observaciones":"nota de corte"}]}
 MÍNIMO 8 piezas con dimensiones exactas en mm que correspondan exactamente a los componentes reales del mueble.`),
 
-      callAgent(`Eres ESPECIALISTA EN MATERIALES de Fenga (manufactura industrial México).
+      callAgent(ai, `Eres ESPECIALISTA EN MATERIALES de Fenga (manufactura industrial México).
 ${ctx}
 
 Responde SOLO JSON válido sin markdown:
 {"materiales":[{"descripcion":"nombre","especificacion":"grado/calibre/espesor","cantidad":"número","unidad":"m2/ml/pza/kg/lts","codigoColor":"RAL 0000 o Pantone 000 o Natural","proveedor":"nombre proveedor México"}],"acabadoFinal":{"tipo":"tipo acabado","producto":"nombre comercial","codigoColor":"RAL 0000","capas":2,"instrucciones":"instrucciones detalladas de aplicación"},"acabados":["acabado 1","acabado 2"]}
 IMPORTANTE: Incluye SOLO los materiales necesarios para los componentes reales de este mueble. Si tiene LED incluye perfil de aluminio y fuente de poder. Si tiene vidrio incluye vidrio templado. Si tiene cartón corrugado inclúyelo. Mínimo 5 materiales exactos.`),
 
-      callAgent(`Eres JEFE DE PRODUCCIÓN de Fenga (manufactura industrial México).
+      callAgent(ai, `Eres JEFE DE PRODUCCIÓN de Fenga (manufactura industrial México).
 ${ctx}
 
 Responde SOLO JSON válido sin markdown:
 {"herrajes":[{"descripcion":"nombre específico","especificacion":"medida/modelo exacto","cantidad":4,"unidad":"pza","uso":"función específica en este mueble"}],"secuenciaEnsamble":[{"paso":1,"operacion":"nombre operación","descripcion":"descripción detallada y específica del paso para este mueble","herramientas":["herramienta1"],"tiempoMin":30}],"herramientasNecesarias":["herramienta1"],"tiempoEstimadoHoras":40,"tiempoEntregaDias":15,"procesosFabricacion":["Proceso 1"]}
 IMPORTANTE: Los herrajes deben corresponder EXACTAMENTE a los componentes reales: ${compResumen}. Si no hay puertas, no incluyas bisagras. Si hay cajones, incluye rieles telescópicos. Mínimo 6 herrajes específicos. Ensamble con 8-12 pasos detallados.`),
 
-      callAgent(`Eres DIRECTOR DE CALIDAD de Fenga (manufactura industrial México).
+      callAgent(ai, `Eres DIRECTOR DE CALIDAD de Fenga (manufactura industrial México).
 ${ctx}
 
 Responde SOLO JSON válido sin markdown:
 {"controlCalidad":[{"punto":"punto de inspección específico para este mueble","criterio":"criterio medible de aceptación"}],"notasTaller":"instrucciones críticas específicas para fabricar este mueble: riesgos, seguridad, tolerancias, procesos especiales","notas":"nota para cliente: garantías, cuidados específicos de los materiales usados, instrucciones de instalación y mantenimiento"}
 Mínimo 8 puntos de control con criterios medibles.`),
 
-      callAgent(`Eres el DIRECTOR COMERCIAL de Fenga (manufactura industrial México). Genera cotización detallada para ESTE mueble específico basada en costos reales de mercado mexicano 2025.
+      callAgent(ai, `Eres el DIRECTOR COMERCIAL de Fenga (manufactura industrial México). Genera cotización detallada para ESTE mueble específico basada en costos reales de mercado mexicano 2025.
 ${ctx}
 
 Responde SOLO JSON válido sin markdown:
@@ -134,7 +134,7 @@ Genera mínimo 8 conceptos con costos unitarios reales MXN. Solo incluye costos 
 
     const [agente6, agente7, agente8] = await Promise.all([
 
-      callAgent(`Eres el INGENIERO DE PLANOS MECÁNICOS senior de Fenga. Genera datos precisos para planos técnicos ortogonales del ensamble completo.
+      callAgent(ai, `Eres el INGENIERO DE PLANOS MECÁNICOS senior de Fenga. Genera datos precisos para planos técnicos ortogonales del ensamble completo.
 ${ctx}
 DIMENSIÓN TOTAL: ${dimTotal}
 LISTA DE CORTES REAL:\n${cortesResumen}
@@ -188,7 +188,7 @@ Responde SOLO JSON válido sin markdown:
 }
 IMPORTANTE: anchoTotal/altoTotal de CADA vista deben coincidir con las dimensiones reales. vistaFrontal debe mostrar TODOS los elementos visibles desde el frente (paneles laterales, cajones, puertas, repisas, etc.). Incluye SOLO los elementos que existen en este mueble.`),
 
-      callAgent(`Eres DIBUJANTE TÉCNICO INDUSTRIAL ESPECIALISTA A de Fenga. Genera datos de detalle por pieza.
+      callAgent(ai, `Eres DIBUJANTE TÉCNICO INDUSTRIAL ESPECIALISTA A de Fenga. Genera datos de detalle por pieza.
 ${ctx}
 LISTA DE CORTES:\n${cortesResumen}
 COMPONENTES: ${compResumen}
@@ -214,7 +214,7 @@ Responde SOLO JSON válido sin markdown:
 }
 Genera datos para todas las piezas. Solo incluye ranuras de backpanel si el mueble tiene backpanel.`),
 
-      callAgent(`Eres DIBUJANTE TÉCNICO INDUSTRIAL ESPECIALISTA B de Fenga. Genera cortes transversales y detalles constructivos.
+      callAgent(ai, `Eres DIBUJANTE TÉCNICO INDUSTRIAL ESPECIALISTA B de Fenga. Genera cortes transversales y detalles constructivos.
 ${ctx}
 DIMENSIÓN TOTAL: ${dimTotal}
 LISTA DE CORTES:\n${cortesResumen}
